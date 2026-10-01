@@ -22,14 +22,25 @@ Du skal bruge ca. 5 GB fri disk, ca. 8 GB RAM til Docker og netadgang første ga
 
 ### 1.1 Installér forudsætningerne
 
-**Linux (Ubuntu/Debian):**
+**Arch, Manjaro og andre Arch-baserede systemer:**
+
+```bash
+sudo pacman -S --needed git python curl openssl docker docker-compose
+sudo systemctl enable --now docker
+sudo usermod -aG docker "$USER"   # log ud og ind igen bagefter
+```
+
+Arch' `python`-pakke har allerede venv med, så der er ikke brug for en ekstra pakke.
+
+**Ubuntu og Debian:**
 
 ```bash
 sudo apt update && sudo apt install -y git python3 python3-venv curl openssl
 ```
 
 Installér derefter Docker Engine med Compose v2 ([docs.docker.com/engine/install](https://docs.docker.com/engine/install/)).
-Tjek, at `docker compose version` virker uden `sudo`.
+
+**Alle Linux-systemer:** tjek, at `docker compose version` virker uden `sudo`.
 
 **macOS:** Installér [Homebrew](https://brew.sh) og [Docker Desktop](https://www.docker.com/products/docker-desktop/).
 Kør derefter:
@@ -135,7 +146,8 @@ Vil du køre direkte i Windows, skal følgende ændres først:
 
 | Symptom | Løsning |
 |---|---|
-| `ensurepip is not available` under `./setup.sh` | `sudo apt install python3-venv` |
+| `ensurepip is not available` under `./setup.sh` (Ubuntu/Debian) | `sudo apt install python3-venv` |
+| `permission denied` på `/var/run/docker.sock` | Din bruger er ikke i `docker`-gruppen. Kør `sudo usermod -aG docker "$USER"`, og log ud og ind. |
 | `declare: -A: invalid option` (macOS) | bash er for gammel. Kør `brew install bash`, og åbn en ny terminal. |
 | `timeout: command not found` (macOS) | `brew install coreutils` |
 | `--check` viser FEJL ved `/health` | Backenden kører ikke. Kør `docker compose ps` i `llm_backend/`. |
