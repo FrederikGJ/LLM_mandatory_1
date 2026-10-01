@@ -1,0 +1,31 @@
+# Rolle -> endpoint-mapping (HR-01 / HR-02).
+# For at flytte en rolle til et andet endpoint ændres KUN dens linje under `roles`.
+# API-nøgler står ikke her; `api_key_env` peger på variablen i .env.
+
+endpoints:
+  llm-a:
+    description: Architect/lead - Qwen2.5-Coder-3B-Instruct (Q4_K_M)
+    base_url: http://127.0.0.1:8081/v1
+    api_key_env: LLM_A_API_KEY
+    model: qwen2.5-coder-3b
+    context_window: 8192
+    max_tokens: 2048
+    timeout_seconds: 300
+
+  llm-b:
+    description: Worker/tester - Qwen2.5-Coder-1.5B-Instruct (Q4_K_M)
+    base_url: http://127.0.0.1:8082/v1
+    api_key_env: LLM_B_API_KEY
+    model: qwen2.5-coder-1.5b
+    context_window: 8192
+    max_tokens: 1024
+    timeout_seconds: 180
+
+roles:
+  architect: llm-a
+  tech_lead: llm-a
+  coder_1: llm-b
+  coder_2: llm-b
+  tester: llm-b
+  docs: llm-b
+  deploy: llm-b

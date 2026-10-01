@@ -1,0 +1,102 @@
+# To lokale, CPU-only LLM-endpoints (llama.cpp server) med OpenAI-kompatibelt API.
+#   llm-a: architect/lead   -> 127.0.0.1:${LLM_A_PORT}  (Qwen2.5-Coder-3B,   4 tråde, 4 GB)
+#   llm-b: worker/tester    -> 127.0.0.1:${LLM_B_PORT}  (Qwen2.5-Coder-1.5B, 3 tråde, 3 GB)
+# Alle værdier læses fra .env (se .env.example).
+
+name: llm-toolchain
+
+x-llm-common: &llm-common
+  image: ${LLAMA_IMAGE:-ghcr.io/ggml-org/llama.cpp:server}
+  restart: unless-stopped
+  volumes:
+    - ./models:/models:ro
+  depends_on:
+    model-init:
+      condition: service_completed_successfully
+  healthcheck:
+    # /health kræver ikke API-nøgle og svarer 503, mens modellen indlæses.
+    test: ["CMD", "curl", "-fsS", "http://localhost:8080/health"]
+    interval: 15s
+    timeout: 5s
+    retries: 5
+    start_period: 120s
+  security_opt:
+    - no-new-privileges:true
+
+services:
+  # Engangsservice: henter GGUF-filerne til ./models, hvis de mangler.
+  model-init:
+    image: ${CURL_IMAGE:-curlimages/curl:latest}
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    entrypoint: ["/bin/sh", "/scripts/download-models.sh"]
+    environment:
+      MODELS_DIR: /models
+      MODEL_A_FILE: ${MODEL_A_FILE:?Sæt MODEL_A_FILE i .env}
+      MODEL_A_URL: ${MODEL_A_URL:?Sæt MODEL_A_URL i .env}
+      MODEL_B_FILE: ${MODEL_B_FILE:?Sæt MODEL_B_FILE i .env}
+      MODEL_B_URL: ${MODEL_B_URL:?Sæt MODEL_B_URL i .env}
+      HF_TOKEN: ${HF_TOKEN:-}
+    volumes:
+      - ./models:/models
+      - ./scripts:/scripts:ro
+    restart: "no"
+
+  llm-a:
+    <<: *llm-common
+    command:
+      - --model
+      - /models/${MODEL_A_FILE}
+      - --alias
+      - ${MODEL_A_ALIAS:-qwen2.5-coder-3b}
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8080"
+      - --ctx-size
+      - ${LLM_CTX_SIZE:-8192}
+      - --n-predict
+      - ${LLM_A_MAX_TOKENS:-2048}
+      - --parallel
+      - "1"
+      - --threads
+      - "4"
+      - --threads-batch
+      - "4"
+    environment:
+      # Svarer til --api-key, men holder nøglen ude af host'ens procesliste (ps aux).
+      LLAMA_API_KEY: ${LLM_A_API_KEY:?Sæt LLM_A_API_KEY i .env}
+    ports:
+      # NFR-SEC-01: kun localhost.
+      - "127.0.0.1:${LLM_A_PORT:-8081}:8080"
+    cpus: 4
+    mem_limit: 4g
+    memswap_limit: 4g # = mem_limit -> ingen swap
+
+  llm-b:
+    <<: *llm-common
+    command:
+      - --model
+      - /models/${MODEL_B_FILE}
+      - --alias
+      - ${MODEL_B_ALIAS:-qwen2.5-coder-1.5b}
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8080"
+      - --ctx-size
+      - ${LLM_CTX_SIZE:-8192}
+      - --n-predict
+      - ${LLM_B_MAX_TOKENS:-1024}
+      - --parallel
+      - "1"
+      - --threads
+      - "3"
+      - --threads-batch
+      - "3"
+    environment:
+      LLAMA_API_KEY: ${LLM_B_API_KEY:?Sæt LLM_B_API_KEY i .env}
+    ports:
+      - "127.0.0.1:${LLM_B_PORT:-8082}:8080"
+    cpus: 3
+    mem_limit: 3g
+    memswap_limit: 3g
