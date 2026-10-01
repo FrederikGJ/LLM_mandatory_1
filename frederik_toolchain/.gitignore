@@ -1,0 +1,36 @@
+# Personlig plan (ikke delt)
+/planen.md
+
+# Hemmeligheder / lokal konfiguration
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Build-output
+dist/
+build/
+
+# Logs og agent-output
+*.log
+logs/
+
+# Editor / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
