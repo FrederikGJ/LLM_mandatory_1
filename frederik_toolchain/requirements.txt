@@ -1,0 +1,109 @@
+aider-chat==0.86.2        # via -r requirements.in
+aiohappyeyeballs==2.6.1   # via aider-chat, aiohttp
+aiohttp==3.13.3           # via aider-chat, litellm
+aiosignal==1.4.0          # via aider-chat, aiohttp
+annotated-doc==0.0.4      # via aider-chat, fastapi, typer
+annotated-types==0.7.0    # via aider-chat, pydantic
+anyio==4.12.1             # via aider-chat, httpx, openai, starlette, watchfiles
+asgiref==3.11.1           # via aider-chat, mixpanel
+attrs==25.4.0             # via aider-chat, aiohttp, jsonschema, referencing
+backoff==2.2.1            # via aider-chat, posthog
+beautifulsoup4==4.14.3    # via aider-chat
+certifi==2026.1.4         # via aider-chat, httpcore, httpx, requests
+cffi==2.0.0               # via aider-chat, sounddevice, soundfile
+charset-normalizer==3.4.4  # via aider-chat, requests
+click==8.3.1              # via aider-chat, litellm, typer
+colorama==0.4.6 ; sys_platform == 'win32'  # via click, tqdm
+configargparse==1.7.1     # via aider-chat
+diff-match-patch==20241021  # via aider-chat
+diskcache==5.6.3          # via aider-chat
+distro==1.9.0             # via aider-chat, openai, posthog
+fastapi==0.128.8          # via aider-chat
+fastuuid==0.14.0          # via aider-chat, litellm
+filelock==3.20.3          # via aider-chat, huggingface-hub
+flake8==7.3.0             # via aider-chat
+frozenlist==1.8.0         # via aider-chat, aiohttp, aiosignal
+fsspec==2026.2.0          # via aider-chat, huggingface-hub
+gitdb==4.0.12             # via aider-chat, gitpython
+gitpython==3.1.46         # via aider-chat
+grep-ast==0.9.0           # via aider-chat
+h11==0.16.0               # via aider-chat, httpcore
+hf-xet==1.2.0             # via aider-chat, huggingface-hub
+httpcore==1.0.9           # via aider-chat, httpx
+httpx==0.28.1             # via aider-chat, huggingface-hub, litellm, mixpanel, openai
+huggingface-hub==1.4.1    # via aider-chat, tokenizers
+idna==3.11                # via aider-chat, anyio, httpx, requests, yarl
+importlib-metadata==7.2.1  # via aider-chat, litellm
+importlib-resources==6.5.2  # via aider-chat
+jinja2==3.1.6             # via aider-chat, litellm
+jiter==0.13.0             # via aider-chat, openai
+json5==0.13.0             # via aider-chat
+jsonschema==4.26.0        # via aider-chat, litellm
+jsonschema-specifications==2025.9.1  # via aider-chat, jsonschema
+litellm==1.81.10          # via aider-chat
+markdown-it-py==4.0.0     # via aider-chat, rich
+markupsafe==3.0.3         # via aider-chat, jinja2
+mccabe==0.7.0             # via aider-chat, flake8
+mdurl==0.1.2              # via aider-chat, markdown-it-py
+mixpanel==5.0.0           # via aider-chat
+mslex==1.3.0              # via aider-chat, oslex
+multidict==6.7.1          # via aider-chat, aiohttp, yarl
+networkx==3.4.2           # via aider-chat
+numpy==1.26.4             # via aider-chat, scipy, soundfile
+openai==2.20.0            # via aider-chat, litellm
+orjson==3.11.7            # via aider-chat
+oslex==0.1.3              # via aider-chat
+packaging==26.0           # via aider-chat, huggingface-hub
+pathspec==1.0.4           # via aider-chat, grep-ast
+pexpect==4.9.0            # via aider-chat
+pillow==12.1.1            # via aider-chat
+posthog==7.8.6            # via aider-chat
+prompt-toolkit==3.0.52    # via aider-chat
+propcache==0.4.1          # via aider-chat, aiohttp, yarl
+psutil==7.2.2             # via aider-chat
+ptyprocess==0.7.0         # via aider-chat, pexpect
+pycodestyle==2.14.0       # via aider-chat, flake8
+pycparser==3.0            # via aider-chat, cffi
+pydantic==2.12.5          # via aider-chat, fastapi, litellm, mixpanel, openai
+pydantic-core==2.41.5     # via aider-chat, pydantic
+pydub==0.25.1             # via aider-chat
+pyflakes==3.4.0           # via aider-chat, flake8
+pygments==2.19.2          # via aider-chat, rich
+pypandoc==1.16.2          # via aider-chat
+pyperclip==1.11.0         # via aider-chat
+python-dateutil==2.9.0.post0  # via aider-chat, posthog
+python-dotenv==1.2.1      # via aider-chat, litellm
+pyyaml==6.0.3             # via aider-chat, huggingface-hub
+referencing==0.37.0       # via aider-chat, jsonschema, jsonschema-specifications
+regex==2026.1.15          # via aider-chat, tiktoken
+requests==2.32.5          # via aider-chat, mixpanel, posthog, tiktoken
+rich==14.3.2              # via aider-chat, typer
+rpds-py==0.30.0           # via aider-chat, jsonschema, referencing
+scipy==1.15.3             # via aider-chat
+shellingham==1.5.4        # via aider-chat, huggingface-hub, typer
+shtab==1.8.0              # via aider-chat
+six==1.17.0               # via aider-chat, posthog, python-dateutil
+smmap==5.0.2              # via aider-chat, gitdb
+sniffio==1.3.1            # via aider-chat, openai
+socksio==1.0.0            # via aider-chat
+sounddevice==0.5.5        # via aider-chat
+soundfile==0.13.1         # via aider-chat
+soupsieve==2.8.3          # via aider-chat, beautifulsoup4
+starlette==0.52.1         # via aider-chat, fastapi
+tiktoken==0.12.0          # via aider-chat, litellm
+tokenizers==0.22.2        # via aider-chat, litellm
+tqdm==4.67.3              # via aider-chat, huggingface-hub, openai
+tree-sitter==0.25.2       # via aider-chat, tree-sitter-language-pack
+tree-sitter-c-sharp==0.23.1  # via aider-chat, tree-sitter-language-pack
+tree-sitter-embedded-template==0.25.0  # via aider-chat, tree-sitter-language-pack
+tree-sitter-language-pack==0.13.0  # via aider-chat, grep-ast
+tree-sitter-yaml==0.7.2   # via aider-chat, tree-sitter-language-pack
+typer==0.23.0             # via aider-chat, typer-slim
+typer-slim==0.23.0        # via aider-chat, huggingface-hub
+typing-extensions==4.15.0  # via aider-chat, aiosignal, anyio, beautifulsoup4, fastapi, huggingface-hub, openai, posthog, pydantic, pydantic-core, referencing, starlette, typing-inspection
+typing-inspection==0.4.2  # via aider-chat, fastapi, pydantic
+urllib3==2.6.3            # via aider-chat, requests
+watchfiles==1.1.1         # via aider-chat
+wcwidth==0.6.0            # via aider-chat, prompt-toolkit
+yarl==1.22.0              # via aider-chat, aiohttp
+zipp==3.23.0              # via aider-chat, importlib-metadata

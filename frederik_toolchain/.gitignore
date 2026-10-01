@@ -1,6 +1,10 @@
 # Personlig plan (ikke delt)
 /planen.md
 
+# Toolchainens egne værktøjer (uv, Python 3.12) og kørsler med demo-repoer
+/.uv/
+/runs/
+
 # Hemmeligheder / lokal konfiguration
 .env
 .env.*

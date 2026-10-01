@@ -1,0 +1,29 @@
+annotated-doc==0.0.5      # via fastapi, -c requirements.txt
+annotated-types==0.8.0    # via pydantic, -c requirements.txt
+anyio==4.15.1             # via httpx, starlette, -c requirements.txt
+ast-serialize==0.11.2     # via mypy
+certifi==2026.7.22        # via httpcore, httpx
+click==8.5.0              # via uvicorn, -c requirements.txt
+colorama==0.4.6 ; sys_platform == 'win32'  # via pytest
+fastapi==0.142.2          # via -c requirements.txt, -r requirements.in
+h11==0.16.0               # via httpcore, uvicorn, -c requirements.txt
+httpcore==1.0.9           # via httpx
+httpx==0.28.1             # via -r requirements-dev.in
+idna==3.20                # via anyio, httpx, -c requirements.txt
+iniconfig==2.3.0          # via pytest
+librt==0.16.0 ; platform_python_implementation != 'PyPy'  # via mypy
+mypy==2.3.1               # via -r requirements-dev.in
+mypy-extensions==1.1.0    # via mypy
+opentelemetry-api==1.45.0  # via fastapi, -c requirements.txt
+packaging==26.3           # via pytest
+pathspec==1.1.1           # via mypy
+pluggy==1.6.0             # via pytest
+pydantic==2.13.5          # via fastapi, -c requirements.txt
+pydantic-core==2.46.5     # via pydantic, -c requirements.txt
+pygments==2.21.0          # via pytest
+pytest==9.1.1             # via -r requirements-dev.in
+ruff==0.16.9              # via -r requirements-dev.in
+starlette==1.7.0          # via fastapi, -c requirements.txt
+typing-extensions==4.16.0  # via anyio, fastapi, mypy, opentelemetry-api, pydantic, pydantic-core, starlette, typing-inspection, -c requirements.txt
+typing-inspection==0.4.4  # via fastapi, pydantic, -c requirements.txt
+uvicorn==0.54.0           # via -c requirements.txt, -r requirements.in

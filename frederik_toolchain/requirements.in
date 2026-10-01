@@ -1,0 +1,4 @@
+# Direkte afhængigheder for toolchain-venv'en (.venv). Låses til requirements.txt med:
+#   ./setup.sh --lock
+# Aider: Apache 2.0, https://github.com/Aider-AI/aider (HR-03)
+aider-chat==0.86.2

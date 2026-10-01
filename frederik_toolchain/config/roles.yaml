@@ -1,0 +1,182 @@
+# Roller og opgaver for Aider-toolchainen.
+#
+# Endpointet for hver rolle står IKKE her. Det slås op under `roles:` i
+# llm_backend/config/endpoints.yaml (HR-02), så en rolle flyttes uden kodeændring.
+#
+# Pr. opgave:
+#   edit       filer agenten skriver (oprettes tomme, hvis de mangler). Én fil pr. opgave, hvor det kan lade sig gøre,
+#              fordi llm-b højst svarer med 1024 tokens, og edit-format "whole" skriver hele filen.
+#   read       read-only kontekst (lægges efter rollens egne read-filer, så prompt-cachen i llama.cpp genbruges)
+#   mode       code: rollens model skriver selv. architect: rollens model planlægger, editor_endpoint skriver filerne
+#              (Aiders architect/editor-par). Architect-mode bruges kun til tech_lead/fix: i en test skrev
+#              llm-b som editor kun components.md korrekt i 1 af 2 forsøg (332 s), mens llm-a i code-mode
+#              klarede den i første forsøg (98 s). Se docs/evaluering.md (EV-04).
+#   max_lines  hårdt loft over ikke-tomme linjer i opgavens Markdown-filer. Står i beskeden til modellen og
+#              tjekkes bagefter; er filen for lang, får modellen ét nyt forsøg med besked om at forkorte den.
+#   manual     true = køres kun, når opgaven nævnes eksplicit (run_role.sh <rolle> <opgave>)
+#   run_before glue-script i scripts/, der køres i demo-repoet før Aider (fx quality)
+#
+# Opgaven kræver kun, at hvert ansvar er dækket (se README), så artefakterne er bevidst små:
+# korte stikordsdokumenter, alle tickets i én fil, kun Dockerfile som deploy-validering, og
+# designdokumenterne er arkitekturfilerne i docs/arch/.
+
+defaults:
+  mode: code
+  editor_endpoint: llm-b  # architect-mode: editor-model (HR-01)
+  weak_endpoint: llm-b    # Aiders commit-beskeder
+  map_tokens: 0           # repo map fra; kan hæves pr. rolle/opgave ved vækst (NFR-CTX-02)
+  retries: 1              # ét nyt forsøg, hvis en fil mangler eller er for lang
+  max_lines: 20
+
+roles:
+  architect:
+    prompt: prompts/architect.md
+    read: [SPEC.md]
+    tasks:
+      - name: components
+        # Kontrakten, som coder_1 og coder_2 koder mod hver for sig, så den får lidt mere plads.
+        max_lines: 30
+        edit: [docs/arch/components.md]
+        message: |
+          Write docs/arch/components.md (FR-ARK-01) with the headings "# Components", "## Modules" and
+          "## Error mapping". Start with one line on how client, FastAPI app, Storage and SQLite fit together.
+          Modules: for models.py, storage.py and api.py one line with the responsibility, then one bullet per
+          public class, method or function with its exact Python signature, for example
+          "Storage.create_room(self, data: RoomCreate) -> Room". List the fields and types of the four Pydantic
+          models. Storage has one method per operation in SPEC.md: create room, get room, list rooms, create
+          booking, list the bookings of a room and delete a booking. Say which methods raise NotFoundError or
+          ConflictError. Error mapping: one bullet per exception or validation error with its HTTP status code.
+
+      - name: openapi
+        edit: [docs/arch/openapi.yaml]
+        read: [docs/arch/components.md]
+        message: |
+          Write docs/arch/openapi.yaml (FR-ARK-02): an OpenAPI 3.1 document for exactly the endpoints in SPEC.md.
+          Define components/schemas RoomCreate, Room, BookingCreate and Booking and reference them with $ref.
+          List every status code from SPEC.md for each operation. Be compact: no examples, no descriptions
+          except a short summary per operation, and flow style ({...}) for small schemas.
+
+      - name: deployment
+        edit: [docs/arch/deployment.md]
+        read: [docs/arch/components.md]
+        message: |
+          Write docs/arch/deployment.md (FR-ARK-03), the deployment topology as bullets: the container and what
+          runs in it, host and container port, the SQLite file on a volume and the BOOKING_DB variable, the port
+          published only on 127.0.0.1, and why it runs as a single instance. Add a 3-line indented ASCII diagram.
+
+      - name: adr
+        edit: [docs/arch/adr.md]
+        read: [docs/arch/components.md]
+        message: |
+          Write docs/arch/adr.md (FR-ARK-04) with two architecture decision records, each a "## ADR-00x: <title>"
+          heading followed by four bullets: Status (Accepted), Context, Decision and Consequences.
+          ADR-001: FastAPI with Pydantic v2. ADR-002: SQLite through sqlite3 without an ORM, and its limits.
+
+  tech_lead:
+    prompt: prompts/tech_lead.md
+    read: [SPEC.md, docs/arch/components.md]
+    tasks:
+      - name: tickets
+        # Fire tickets à fem linjer plus overskrift.
+        max_lines: 25
+        edit: [tickets/TICKETS.md]
+        message: |
+          Write tickets/TICKETS.md (FR-TL-01..04) with these four tickets in this order:
+          T-01: owner coder_1, file src/booking/models.py, depends on none. The four Pydantic models with
+          their validation (capacity >= 1, non-empty title).
+          T-02: owner coder_1, file src/booking/storage.py, depends on T-01. Class Storage with every method from
+          components.md, the overlap rule R3, NotFoundError and ConflictError.
+          T-03: owner coder_2, file src/booking/api.py, depends on T-01 and T-02. create_app(db_path), app, all
+          endpoints from SPEC.md and the exception to status code mapping. coder_2 works in parallel with
+          coder_1 and codes against the interfaces in components.md.
+          T-04: owner tester, file tests/test_api.py, depends on T-03. pytest tests through TestClient for
+          R1-R7, including overlap (409), back-to-back bookings, start >= end (422) and the 404 cases.
+      - name: fix
+        # Kun når kvalitetsgaten fejler: tech lead (llm-a) læser fejlene og planlægger rettelsen,
+        # editor-modellen (llm-b) skriver de rettede filer.
+        manual: true
+        mode: architect
+        edit: [src/booking/models.py, src/booking/storage.py, src/booking/api.py]
+        read: [tests/test_api.py, reports/raw/summary.md]
+        message: |
+          The quality gate failed; the errors are in reports/raw/summary.md. Find the cause and fix the source
+          files so that pytest, ruff and mypy pass. Do not change the tests. Change as few files as possible.
+
+  coder_1:
+    prompt: prompts/coder.md
+    read: [SPEC.md, docs/arch/components.md, tickets/TICKETS.md]
+    tasks:
+      - name: T-01
+        edit: [src/booking/models.py]
+        message: Implement ticket T-01 from tickets/TICKETS.md (FR-IMP-02) in src/booking/models.py.
+      - name: T-02
+        edit: [src/booking/storage.py]
+        read: [src/booking/models.py]
+        message: |
+          Implement ticket T-02 from tickets/TICKETS.md (FR-IMP-02) in src/booking/storage.py. Import the models
+          from booking.models. Use sqlite3 with check_same_thread=False, create the tables in __init__ and store
+          datetimes as ISO strings.
+
+  coder_2:
+    prompt: prompts/coder.md
+    read: [SPEC.md, docs/arch/components.md, tickets/TICKETS.md]
+    tasks:
+      - name: T-03
+        edit: [src/booking/api.py]
+        message: |
+          Implement ticket T-03 from tickets/TICKETS.md (FR-IMP-02) in src/booking/api.py.
+          coder_1 writes src/booking/models.py and src/booking/storage.py on another branch at the same time,
+          so you cannot see them: import exactly the names from components.md
+          (from booking.models import ..., from booking.storage import Storage, NotFoundError, ConflictError).
+
+  tester:
+    prompt: prompts/tester.md
+    read: [SPEC.md, tickets/TICKETS.md]
+    tasks:
+      - name: tests
+        edit: [tests/test_api.py]
+        read: [src/booking/models.py, src/booking/api.py]
+        message: |
+          Write tests/test_api.py (FR-TEST-01) for ticket T-04. Use a pytest fixture that returns
+          TestClient(create_app(":memory:")). One short test per case; at most 80 lines in total.
+      - name: report
+        run_before: quality
+        edit: [reports/quality.md]
+        read: [reports/raw/summary.md]
+        message: |
+          Write reports/quality.md (FR-TEST-01..04) with the headings "# Quality report", "## Results",
+          "## Checks" and "## Risks". Results: a table with check, command and result, with the numbers copied
+          exactly from reports/raw/summary.md. Checks: what the tests and static checks cover, mapped to R1-R7.
+          Risks: at least three concrete risks or known limitations, including any failing check.
+
+  deploy:
+    prompt: prompts/deploy.md
+    read: [SPEC.md, docs/arch/deployment.md]
+    tasks:
+      - name: dockerfile
+        edit: [Dockerfile]
+        read: [requirements.txt]
+        message: |
+          Write the Dockerfile (FR-DEP-01). Base image python:3.12-slim. Install only requirements.txt with pip
+          --no-cache-dir, copy src/, run as a non-root user, keep the database in /data (BOOKING_DB=/data/booking.db),
+          expose 8000 and start uvicorn as in SPEC.md but listening on 0.0.0.0.
+
+  docs:
+    prompt: prompts/docs.md
+    read: [SPEC.md]
+    tasks:
+      - name: readme
+        edit: [README.md]
+        read: [Dockerfile]
+        message: |
+          Write README.md (FR-DOK-01, FR-DOK-02) with the headings "## Setup and run", "## Tests and checks",
+          "## Docker" and "## API usage". Setup and run: create .venv, install requirements-dev.txt, start
+          uvicorn. Tests and checks: pytest, ruff and mypy. Docker: build and run with the port on 127.0.0.1
+          and a named volume. API usage: the endpoints from SPEC.md and one curl example. Design documents
+          are in docs/arch/: say so in one line.
+      - name: runbook
+        edit: [docs/runbook.md]
+        read: [docs/arch/deployment.md, Dockerfile]
+        message: |
+          Write docs/runbook.md (FR-DOK-03) for operators as bullets: start and stop, configuration (BOOKING_DB),
+          health check, logs, backup and restore of the SQLite file, and what to do for common failures.

@@ -1,0 +1,6 @@
+# Test- og kvalitetsværktøj (FR-TEST). Låses til requirements-dev.txt med ../setup.sh --lock
+-r requirements.in
+pytest
+httpx
+ruff
+mypy

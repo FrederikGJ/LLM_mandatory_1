@@ -1,0 +1,40 @@
+# Fælles Aider-indstillinger for alle roller. run_role.sh giver filen til Aider med --config.
+#
+# Model og endpoint pr. rolle sætter run_role.sh ud fra llm_backend/config/endpoints.yaml (HR-01/HR-02):
+# den genererer api_base/api_key pr. model i en midlertidig model-settings-fil. Værdierne herunder er
+# standardparret i architect-mode: llm-a planlægger, llm-b skriver filerne.
+architect: true
+model: openai/qwen2.5-coder-3b
+editor-model: openai/qwen2.5-coder-1.5b
+weak-model: openai/qwen2.5-coder-1.5b
+auto-accept-architect: true
+
+# Git (planens afsnit 1a). Startes Aider direkte fra denne mappe, er git-roden llm_mandatory_1,
+# så git er slået fra som standard. run_role.sh tænder det med --git og låser git-roden til demo-repoet.
+git: false
+auto-commits: true
+dirty-commits: false
+gitignore: false
+git-commit-verify: false
+
+# Agenterne må ikke køre shell-kommandoer eller hente URL'er.
+suggest-shell-commands: false
+detect-urls: false
+
+# Kontekst: repo map er fra som standard og hæves pr. opgave i config/roles.yaml (NFR-CTX-02).
+map-tokens: 0
+
+# Offline og reproducerbart.
+analytics-disable: true
+check-update: false
+show-release-notes: false
+show-model-warnings: false
+
+# Output, der kan læses i logfiler.
+pretty: false
+fancy-input: false
+notifications: false
+restore-chat-history: false
+encoding: utf-8
+chat-language: English
+commit-language: English

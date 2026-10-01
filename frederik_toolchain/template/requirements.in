@@ -1,0 +1,3 @@
+# Runtime-afhængigheder for demo-appen. Låses til requirements.txt med ../setup.sh --lock
+fastapi
+uvicorn
