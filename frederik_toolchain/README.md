@@ -100,7 +100,10 @@ for `max_tokens` (1024 på llm-b). Prompten består af `prompts/common.md`, roll
 Artefakterne er bevidst små, fordi opgaven kun kræver, at hvert ansvar er dækket, og fordi hver token
 koster på CPU. Markdown-filer har et hårdt loft på 20 ikke-tomme linjer i stikord (`max_lines`;
 `components.md` 30 og `TICKETS.md` 25). Loftet står i beskeden til modellen, og `toolchain.py` tjekker det
-bagefter. Er filen for lang, får modellen ét nyt forsøg med besked om at forkorte den. Derudover:
+bagefter. Op til 20 % over godtages med en note; er filen længere, får modellen ét nyt forsøg med besked om
+at forkorte den. Aider må højst bruge én ekstra runde på at rette lint-fejl (`max_reflections: 1`, Aiders
+standard er 3), og testeren skriver præcis 6 tests på højst 50 linjer, så filen kan være inden for 1024
+output-tokens. Derudover:
 
 - Deploy-validering: kun `Dockerfile` (kravet er "mindst én af").
 - Designdokumenter (FR5): arkitekturfilerne i `docs/arch/`, som README'en henviser til.

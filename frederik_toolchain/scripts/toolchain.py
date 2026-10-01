@@ -17,6 +17,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import math
 import os
 import re
 import subprocess
@@ -118,6 +119,8 @@ class Task:
     map_tokens: int
     retries: int
     max_lines: int
+    line_tolerance: float
+    max_reflections: int
     run_before: str | None
     main: Endpoint
     editor: Endpoint | None
@@ -219,6 +222,8 @@ def resolve_tasks(role: str, names: list[str]) -> list[Task]:
                 map_tokens=int(pick("map_tokens")),
                 retries=int(pick("retries")),
                 max_lines=max_lines,
+                line_tolerance=float(pick("line_tolerance")),
+                max_reflections=int(pick("max_reflections")),
                 run_before=t.get("run_before"),
                 main=endpoint(role_map[role]),
                 editor=endpoint(pick("editor_endpoint")) if mode == "architect" else None,
@@ -373,16 +378,13 @@ def bad_task_files(task: Task) -> list[str]:
     return bad
 
 
-def too_long_files(task: Task) -> dict[str, int]:
-    """Markdown-filer over opgavens max_lines, med antal ikke-tomme linjer."""
-    found = {}
-    for f in task.edit:
-        path = DEMO_DIR / f
-        if f.endswith(".md") and path.is_file():
-            lines = sum(1 for line in path.read_text(encoding="utf-8").splitlines() if line.strip())
-            if lines > task.max_lines:
-                found[f] = lines
-    return found
+def markdown_lengths(task: Task) -> dict[str, int]:
+    """Antal ikke-tomme linjer i opgavens Markdown-filer."""
+    return {
+        f: sum(1 for line in (DEMO_DIR / f).read_text(encoding="utf-8").splitlines() if line.strip())
+        for f in task.edit
+        if f.endswith(".md") and (DEMO_DIR / f).is_file()
+    }
 
 
 def remove_empty_untracked(task: Task) -> None:
@@ -451,6 +453,9 @@ def run_task(task: Task, interactive: bool) -> str:
             return "ok" if proc.returncode == 0 else "fejl"
 
         hint = ""
+        # Inden for tolerancen godtages filen med en note; først over den får modellen et nyt forsøg.
+        hard_limit = task.max_lines + math.ceil(task.max_lines * task.line_tolerance)
+        env["TOOLCHAIN_MAX_REFLECTIONS"] = str(task.max_reflections)
         while attempts <= task.retries:
             attempts += 1
             message_file = LOG_DIR / f"{step_id}.message.md"
@@ -463,19 +468,26 @@ def run_task(task: Task, interactive: bool) -> str:
             remove_empty_untracked(task)
             made_commit = git("rev-parse", "HEAD") != attempt_head
             if rc == 0 and made_commit and not bad_task_files(task):
-                too_long = too_long_files(task)
+                lengths = markdown_lengths(task)
+                over = {f: n for f, n in lengths.items() if n > task.max_lines}
+                too_long = {f: n for f, n in over.items() if n > hard_limit}
                 if not too_long:
                     status = "ok"
+                    if over:
+                        lengths_note = ", ".join(f"{f} {n}/{task.max_lines} linjer" for f, n in over.items())
+                        notes.append(f"inden for tolerancen: {lengths_note}")
                     break
                 status = "for lang"
                 files = ", ".join(f"{f} has {n} lines" for f, n in too_long.items())
                 hint = TOO_LONG_HINT.format(files=files + (" which is" if len(too_long) == 1 else ", which are"),
                                             limit=task.max_lines)
-                lengths = ", ".join(f"{f} {n} linjer" for f, n in too_long.items())
-                notes.append(f"forsøg {attempts}: for lang: {lengths} (max {task.max_lines})")
+                too_long_note = ", ".join(f"{f} {n} linjer" for f, n in too_long.items())
+                notes.append(f"forsøg {attempts}: for lang: {too_long_note} (max {task.max_lines})")
                 print(f"--- {label}: {notes[-1]}", flush=True)
                 continue
-            status, hint = "fejl", RETRY_HINT
+            # En fil fra et tidligere forsøg (for lang, men brugbar) ligger stadig committet.
+            status = "for lang" if status == "for lang" else "fejl"
+            hint = RETRY_HINT
             note, hard = diagnose(output)
             notes.append(f"forsøg {attempts}: {note or (f'exit {rc}' if rc else 'ingen commit eller tom fil')}")
             print(f"--- {label}: {notes[-1]}", flush=True)

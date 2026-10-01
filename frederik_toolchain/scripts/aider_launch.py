@@ -9,9 +9,11 @@ resten. Agenten kan dermed ikke oprette filer uden for opgaven, tilføje filer d
 git-kommandoer eller åbne URL'er.
 """
 
+import os
 import sys
 from pathlib import Path
 
+from aider.coders.base_coder import Coder
 from aider.coders.wholefile_coder import WholeFileCoder
 from aider.commands import SwitchCoder
 from aider.main import main as aider_main
@@ -71,6 +73,9 @@ def main() -> int:
     if message_file == "-":
         return aider_main(argv, force_git_root=demo_dir) or 0
 
+    # Aider giver modellen op til 3 ekstra runder til at rette lint-fejl. På CPU koster hver runde et helt
+    # filomskriv med voksende kontekst, så toolchainen sætter loftet (max_reflections i config/roles.yaml).
+    Coder.max_reflections = int(os.environ.get("TOOLCHAIN_MAX_REFLECTIONS", Coder.max_reflections))
     coder = aider_main(argv, force_git_root=demo_dir, return_coder=True)
     if not hasattr(coder, "run"):  # Aider stoppede under opstart og returnerede en exit-kode
         return coder or 1

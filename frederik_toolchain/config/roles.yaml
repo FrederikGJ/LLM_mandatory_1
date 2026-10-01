@@ -11,8 +11,12 @@
 #              (Aiders architect/editor-par). Architect-mode bruges kun til tech_lead/fix: i en test skrev
 #              llm-b som editor kun components.md korrekt i 1 af 2 forsøg (332 s), mens llm-a i code-mode
 #              klarede den i første forsøg (98 s). Se docs/evaluering.md (EV-04).
-#   max_lines  hårdt loft over ikke-tomme linjer i opgavens Markdown-filer. Står i beskeden til modellen og
-#              tjekkes bagefter; er filen for lang, får modellen ét nyt forsøg med besked om at forkorte den.
+#   max_lines  loft over ikke-tomme linjer i opgavens Markdown-filer. Står i beskeden til modellen og
+#              tjekkes bagefter. Op til line_tolerance over godtages med en note; er filen længere, får modellen
+#              ét nyt forsøg med besked om at forkorte den. (Uden tolerance kostede 21/20 linjer 342 s og et
+#              mislykket forsøg i run-2.)
+#   max_reflections  hvor mange ekstra runder Aider må bruge på at rette lint-fejl (Aiders standard er 3;
+#              i run-2 kostede tre runder 423 s på storage.py uden at fejlen blev rettet).
 #   manual     true = køres kun, når opgaven nævnes eksplicit (run_role.sh <rolle> <opgave>)
 #   run_before glue-script i scripts/, der køres i demo-repoet før Aider (fx quality)
 #
@@ -27,6 +31,8 @@ defaults:
   map_tokens: 0           # repo map fra; kan hæves pr. rolle/opgave ved vækst (NFR-CTX-02)
   retries: 1              # ét nyt forsøg, hvis en fil mangler eller er for lang
   max_lines: 20
+  line_tolerance: 0.2     # 20 linjer -> nyt forsøg først over 24
+  max_reflections: 1      # højst én lint-runde
 
 roles:
   architect:
@@ -37,15 +43,19 @@ roles:
         # Kontrakten, som coder_1 og coder_2 koder mod hver for sig, så den får lidt mere plads.
         max_lines: 30
         edit: [docs/arch/components.md]
+        # Beskeden er formuleret, så llm-a skriver signaturerne: med et udfyldnings-skelet kopierede den
+        # instruktionerne, og med en kortere besked droppede den signaturerne helt.
         message: |
-          Write docs/arch/components.md (FR-ARK-01) with the headings "# Components", "## Modules" and
-          "## Error mapping". Start with one line on how client, FastAPI app, Storage and SQLite fit together.
-          Modules: for models.py, storage.py and api.py one line with the responsibility, then one bullet per
-          public class, method or function with its exact Python signature, for example
-          "Storage.create_room(self, data: RoomCreate) -> Room". List the fields and types of the four Pydantic
-          models. Storage has one method per operation in SPEC.md: create room, get room, list rooms, create
-          booking, list the bookings of a room and delete a booking. Say which methods raise NotFoundError or
-          ConflictError. Error mapping: one bullet per exception or validation error with its HTTP status code.
+          Write docs/arch/components.md (FR-ARK-01), the interface contract that both developers code against.
+          Use the headings "# Components", one "## <module path>" per module in SPEC.md (src/booking/models.py,
+          src/booking/storage.py, src/booking/api.py) and "## Error mapping".
+          Under each module: one bullet with its responsibility, then one bullet per public class, method or
+          function with its exact Python signature, for example
+          "Storage.create_room(self, data: RoomCreate) -> Room (raises ConflictError if the name is taken)".
+          List the fields and types of the four Pydantic models. Storage needs __init__(self, db_path: str) and
+          one method for each operation in SPEC.md: create room, get room, list rooms, create booking, list the
+          bookings of a room and delete a booking. Say which method raises NotFoundError or ConflictError.
+          Error mapping: one bullet per exception or validation error with its HTTP status code.
 
       - name: openapi
         edit: [docs/arch/openapi.yaml]
@@ -94,8 +104,11 @@ roles:
       - name: fix
         # Kun når kvalitetsgaten fejler: tech lead (llm-a) læser fejlene og planlægger rettelsen,
         # editor-modellen (llm-b) skriver de rettede filer.
+        # Intet nyt forsøg: i run-2 ramte editoren 1024 tokens med tre filer, og det samme forsøg igen
+        # ville give samme resultat (ca. 7 min spildt).
         manual: true
         mode: architect
+        retries: 0
         edit: [src/booking/models.py, src/booking/storage.py, src/booking/api.py]
         read: [tests/test_api.py, reports/raw/summary.md]
         message: |
@@ -136,9 +149,14 @@ roles:
       - name: tests
         edit: [tests/test_api.py]
         read: [src/booking/models.py, src/booking/api.py]
+        # Højst 50 linjer, så filen kan være inden for llm-b's 1024 output-tokens (80 linjer ramte loftet to gange).
         message: |
-          Write tests/test_api.py (FR-TEST-01) for ticket T-04. Use a pytest fixture that returns
-          TestClient(create_app(":memory:")). One short test per case; at most 80 lines in total.
+          Write tests/test_api.py (FR-TEST-01) for ticket T-04: exactly 6 short tests and at most 50 lines.
+          Use a pytest fixture that returns TestClient(create_app(":memory:")) and one helper that creates a room
+          and returns its id. Tests: 1) GET /health; 2) create and list rooms; 3) a duplicate room name gives 409;
+          4) create a booking and list it for the room; 5) an overlapping booking gives 409 and a back-to-back
+          booking gives 201; 6) start >= end gives 422 and an unknown room gives 404.
+          Use ISO datetimes such as "2026-01-01T10:00:00".
       - name: report
         run_before: quality
         edit: [reports/quality.md]
