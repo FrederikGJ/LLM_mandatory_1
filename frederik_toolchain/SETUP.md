@@ -105,27 +105,69 @@ Backenden skal køre, mens pipelinen kører. Sæt maskinen på strøm.
 Toolchainen består af bash-scripts med Linux-stier, så den kører ikke direkte i Windows. Brug i stedet
 **WSL2**, som er en rigtig Linux inde i Windows. Så kan du følge Linux-vejledningen.
 
-### 2.1 Installér WSL2 og Docker
+### 2.1 Installér WSL og Ubuntu (kun første gang)
 
-1. Åbn PowerShell som administrator og kør `wsl --install -d Ubuntu`. Genstart, og opret en bruger.
-2. Installér [Docker Desktop](https://www.docker.com/products/docker-desktop/). Under *Settings*:
+1. Åbn startmenuen og skriv **PowerShell**. Højreklik, og vælg **Kør som administrator**.
+2. Kør:
+
+   ```powershell
+   wsl --install -d Ubuntu
+   ```
+
+3. Genstart computeren.
+4. Efter genstarten åbner et Ubuntu-vindue af sig selv. Sker det ikke, så start **Ubuntu** fra startmenuen.
+   Vinduet installerer i et par minutter og spørger derefter om et brugernavn og en adgangskode:
+   - Brugernavnet skal være med små bogstaver og uden mellemrum.
+   - Adgangskoden vises ikke, mens du skriver. Det er normalt. Husk den, for `sudo` beder om den senere.
+5. Tjek i PowerShell, at Ubuntu kører som version 2:
+
+   ```powershell
+   wsl -l -v      # Ubuntu skal stå med VERSION 2
+   ```
+
+### 2.2 Sådan kommer du ind i Ubuntu
+
+Du kan åbne Ubuntu på tre måder:
+
+- Start **Ubuntu** fra startmenuen.
+- Klik på pilen ved siden af fanerne i **Windows Terminal**, og vælg Ubuntu.
+- Skriv `wsl` i PowerShell.
+
+Når prompten ser sådan ud, er du inde i Ubuntu, og alle kommandoer herfra er Linux-kommandoer:
+
+    dit-navn@din-pc:~$
+
+Praktiske ting:
+
+- `exit` lukker Ubuntu igen.
+- Indsæt tekst med **Ctrl+Shift+V** eller **højreklik**.
+- Rediger en fil med `nano .env`. Gem med **Ctrl+O** og Enter, og luk med **Ctrl+X**.
+- `explorer.exe .` åbner den mappe, du står i, i Windows Stifinder.
+- Windows' C-drev ligger under `/mnt/c`, men arbejd ikke dér. Se afsnit 2.4.
+
+### 2.3 Installér Docker Desktop
+
+1. Installér [Docker Desktop](https://www.docker.com/products/docker-desktop/) i Windows, og start programmet.
+2. Under *Settings*:
    - *General*: slå "Use the WSL 2 based engine" til.
    - *Resources → WSL integration*: slå Ubuntu til.
-3. Åbn **Ubuntu**-terminalen fra startmenuen og kør:
+3. Åbn Ubuntu (afsnit 2.2) og kør:
 
    ```bash
    sudo apt update && sudo apt install -y git python3 python3-venv curl openssl
    docker compose version   # skal virke
    ```
 
-### 2.2 Følg Linux-trinene inde i Ubuntu
+Docker Desktop skal være startet i Windows, hver gang du bruger `docker` i Ubuntu.
+
+### 2.4 Følg Linux-trinene inde i Ubuntu
 
 Kør afsnit **1.2 til 1.4** i Ubuntu-terminalen.
 
 Klon repoet ind i Linux-hjemmemappen (`cd ~` først), **ikke** under `/mnt/c/...`. Windows-drevet er langsomt set
 fra WSL, og dér virker eksekverbare scripts og git-hooks ikke korrekt.
 
-### 2.3 Uden WSL (ikke understøttet)
+### 2.5 Uden WSL (ikke understøttet)
 
 Vil du køre direkte i Windows, skal følgende ændres først:
 
