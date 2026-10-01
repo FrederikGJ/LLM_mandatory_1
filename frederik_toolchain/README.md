@@ -38,6 +38,8 @@ frederik_toolchain/
 
 ## Opsætning (D-02)
 
+Trin for trin til Linux, macOS og Windows (WSL2): se [SETUP.md](SETUP.md).
+
 Forudsætninger: Linux eller macOS, `git`, en `python3` (kun til at hente uv), Docker med Compose v2,
 ca. 5 GB fri disk og netadgang første gang (PyPI, GitHub og Hugging Face).
 
