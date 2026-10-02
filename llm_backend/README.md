@@ -42,7 +42,10 @@ starter først, når downloaden er færdig. Følg downloaden med `docker compose
 Ved senere opstarter springes downloaden over. Modellerne kan også hentes uden Docker:
 `./scripts/download-models.sh`.
 
-Compose nægter at starte, hvis en API-nøgle mangler. Så kan der ikke opstå et endpoint uden autentificering.
+Mangler en API-nøgle, fejler `model-init`, og `llm-a`/`llm-b` starter ikke. Selv startet direkte
+nægter de at køre uden nøgle. Så kan der ikke opstå et endpoint uden autentificering.
+
+Stop med `docker compose down`. Det virker også uden `.env`.
 
 ## Verifikation
 
@@ -166,6 +169,8 @@ Med 4000 tokens kontekst til `llm-a` tager det altså ~1 minut, før svaret begy
 Se `docker compose logs llm-a`.
 
 **`model-init` fejler**
+- Se årsagen med `docker compose logs model-init`.
+- `FEJL: ... er ikke sat`: `.env` mangler, eller variablen er tom. Se `.env.example`.
 - `Permission denied`: `HOST_UID` og `HOST_GID` i `.env` skal matche `id -u` og `id -g`, og
   `./models` skal ejes af din bruger.
 - `404` eller ugyldig GGUF: tjek `MODEL_*_URL`. Gated repos kræver `HF_TOKEN`.

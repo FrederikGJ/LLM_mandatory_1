@@ -2,6 +2,8 @@
 #   llm-a: architect/lead   -> 127.0.0.1:${LLM_A_PORT}  (Qwen2.5-Coder-3B,   4 tråde, 4 GB)
 #   llm-b: worker/tester    -> 127.0.0.1:${LLM_B_PORT}  (Qwen2.5-Coder-1.5B, 3 tråde, 3 GB)
 # Alle værdier læses fra .env (se .env.example).
+# Ingen variabler er påkrævede ved interpolation, så `docker compose down/ps/logs` virker
+# uden .env. Manglende værdier stoppes i stedet ved opstart (model-init og entrypoint).
 
 name: llm-toolchain
 
@@ -22,20 +24,30 @@ x-llm-common: &llm-common
     start_period: 120s
   security_opt:
     - no-new-privileges:true
+  # Uden nøgle ville llama-server køre uden autentificering (NFR-SEC-01), så den starter ikke.
+  entrypoint:
+    - /bin/sh
+    - -c
+    - '[ -n "$$LLAMA_API_KEY" ] || { echo "FEJL: API-nøgle mangler (se .env.example)" >&2; exit 1; }; exec /app/llama-server "$$@"'
+    - llama-server
 
 services:
-  # Engangsservice: henter GGUF-filerne til ./models, hvis de mangler.
+  # Engangsservice: tjekker .env og henter GGUF-filerne til ./models, hvis de mangler.
+  # Fejler den, starter llm-a/llm-b ikke.
   model-init:
     image: ${CURL_IMAGE:-curlimages/curl:latest}
     user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     entrypoint: ["/bin/sh", "/scripts/download-models.sh"]
     environment:
       MODELS_DIR: /models
-      MODEL_A_FILE: ${MODEL_A_FILE:?Sæt MODEL_A_FILE i .env}
-      MODEL_A_URL: ${MODEL_A_URL:?Sæt MODEL_A_URL i .env}
-      MODEL_B_FILE: ${MODEL_B_FILE:?Sæt MODEL_B_FILE i .env}
-      MODEL_B_URL: ${MODEL_B_URL:?Sæt MODEL_B_URL i .env}
+      MODEL_A_FILE: ${MODEL_A_FILE:-}
+      MODEL_A_URL: ${MODEL_A_URL:-}
+      MODEL_B_FILE: ${MODEL_B_FILE:-}
+      MODEL_B_URL: ${MODEL_B_URL:-}
       HF_TOKEN: ${HF_TOKEN:-}
+      # Kun "ja" eller tom, aldrig selve nøglerne.
+      LLM_A_API_KEY_SET: ${LLM_A_API_KEY:+ja}
+      LLM_B_API_KEY_SET: ${LLM_B_API_KEY:+ja}
     volumes:
       - ./models:/models
       - ./scripts:/scripts:ro
@@ -45,7 +57,7 @@ services:
     <<: *llm-common
     command:
       - --model
-      - /models/${MODEL_A_FILE}
+      - /models/${MODEL_A_FILE:-}
       - --alias
       - ${MODEL_A_ALIAS:-qwen2.5-coder-3b}
       - --host
@@ -64,7 +76,7 @@ services:
       - "4"
     environment:
       # Svarer til --api-key, men holder nøglen ude af host'ens procesliste (ps aux).
-      LLAMA_API_KEY: ${LLM_A_API_KEY:?Sæt LLM_A_API_KEY i .env}
+      LLAMA_API_KEY: ${LLM_A_API_KEY:-}
     ports:
       # NFR-SEC-01: kun localhost.
       - "127.0.0.1:${LLM_A_PORT:-8081}:8080"
@@ -76,7 +88,7 @@ services:
     <<: *llm-common
     command:
       - --model
-      - /models/${MODEL_B_FILE}
+      - /models/${MODEL_B_FILE:-}
       - --alias
       - ${MODEL_B_ALIAS:-qwen2.5-coder-1.5b}
       - --host
@@ -94,7 +106,7 @@ services:
       - --threads-batch
       - "3"
     environment:
-      LLAMA_API_KEY: ${LLM_B_API_KEY:?Sæt LLM_B_API_KEY i .env}
+      LLAMA_API_KEY: ${LLM_B_API_KEY:-}
     ports:
       - "127.0.0.1:${LLM_B_PORT:-8082}:8080"
     cpus: 3

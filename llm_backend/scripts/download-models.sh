@@ -26,6 +26,17 @@ for var in MODEL_A_FILE MODEL_A_URL MODEL_B_FILE MODEL_B_URL; do
   fi
 done
 
+# Kun under compose (model-init): stop, hvis en API-nøgle mangler, så llm-a/llm-b ikke starter.
+if [ -n "${LLM_A_API_KEY_SET+x}" ]; then
+  for var in LLM_A_API_KEY LLM_B_API_KEY; do
+    eval "val=\${${var}_SET:-}"
+    if [ -z "$val" ]; then
+      echo "FEJL: $var er ikke sat (se .env.example)" >&2
+      exit 1
+    fi
+  done
+fi
+
 mkdir -p "$MODELS_DIR"
 if [ ! -w "$MODELS_DIR" ]; then
   echo "FEJL: $MODELS_DIR er ikke skrivbar for uid $(id -u). Tjek HOST_UID/HOST_GID i .env." >&2
