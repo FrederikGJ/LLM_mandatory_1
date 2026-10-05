@@ -1,0 +1,40 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "llm-a/qwen2.5-coder-3b",
+  "small_model": "llm-b/qwen2.5-coder-1.5b",
+  "share": "disabled",
+  "permission": {
+    "edit": "ask",
+    "bash": "ask"
+  },
+  "provider": {
+    "llm-a": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "LLM-A architect/lead (local llama.cpp)",
+      "options": {
+        "baseURL": "http://127.0.0.1:8081/v1",
+        "apiKey": "{env:LLM_A_API_KEY}"
+      },
+      "models": {
+        "qwen2.5-coder-3b": {
+          "name": "Qwen2.5-Coder-3B (A)",
+          "limit": { "context": 8192, "output": 2048 }
+        }
+      }
+    },
+    "llm-b": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "LLM-B worker/tester (local llama.cpp)",
+      "options": {
+        "baseURL": "http://127.0.0.1:8082/v1",
+        "apiKey": "{env:LLM_B_API_KEY}"
+      },
+      "models": {
+        "qwen2.5-coder-1.5b": {
+          "name": "Qwen2.5-Coder-1.5B (B)",
+          "limit": { "context": 8192, "output": 1024 }
+        }
+      }
+    }
+  }
+}
