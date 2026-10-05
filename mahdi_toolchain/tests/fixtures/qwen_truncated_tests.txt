@@ -1,0 +1,133 @@
+```python
+from fastapi import FastAPI, HTTPException
+from fastapi.testclient import TestClient
+from datetime import datetime
+from typing import List, Optional
+from pydantic import BaseModel, ValidationError
+
+# Define the RoomCreate model
+class RoomCreate(BaseModel):
+    name: str
+    capacity: int
+
+# Define the Room model
+class Room(BaseModel):
+    id: int
+    name: str
+    capacity: int
+
+# Define the BookingCreate model
+class BookingCreate(BaseModel):
+    room_id: int
+    title: str
+    start: datetime
+    end: datetime
+
+# Define the Booking model
+class Booking(BaseModel):
+    id: int
+    room_id: int
+    title: str
+    start: datetime
+    end: datetime
+
+# Define the NotFoundError and ConflictError exceptions
+class NotFoundError(Exception):
+    pass
+
+class ConflictError(Exception):
+    pass
+
+# Define the Storage class
+class Storage:
+    def __init__(self, db_path: str):
+        # Initialize the storage with the database path
+        pass
+
+    def create_room(self, data: RoomCreate) -> Room:
+        # Create a new room in the database
+        pass
+
+    def get_room(self, room_id: int) -> Room:
+        # Retrieve a room from the database
+        pass
+
+    def list_rooms(self) -> List[Room]:
+        # List all rooms in the database
+        pass
+
+    def create_booking(self, data: BookingCreate) -> Booking:
+        # Create a new booking in the database
+        pass
+
+    def list_bookings(self, room_id: int) -> List[Booking]:
+        # List all bookings for a specific room in the database
+        pass
+
+    def delete_booking(self, booking_id: int) -> None:
+        # Delete a booking from the database
+        pass
+
+# Define the create_app function
+def create_app(db_path: str) -> FastAPI:
+    # Create a FastAPI application
+    app = FastAPI()
+    # Add the Storage instance to the application
+    app.storage = Storage(db_path)
+    return app
+
+# Define the test_client function
+def test_client(create_app):
+    # Create a test client for the FastAPI application
+    client = TestClient(create_app(":memory:"))
+    return client
+
+# Define the test_health function
+def test_health(client):
+    # Test the health endpoint
+    response = client.get("/health")
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+
+# Define the test_room_create function
+def test_room_create(client):
+    # Test creating a room
+    data = RoomCreate(name="Test Room", capacity=2)
+    response = client.post("/rooms", json=data.dict())
+    assert response.status_code == 201
+    assert response.json() == {"id": 1, "name": "Test Room", "capacity": 2}
+
+# Define the test_room_create_duplicate_name function
+def test_room_create_duplicate_name(client):
+    # Test creating a room with a duplicate name
+    data = RoomCreate(name="Test Room", capacity=2)
+    response = client.post("/rooms", json=data.dict())
+    assert response.status_code == 409
+    assert response.json() == {"detail": "Room name already exists"}
+
+# Define the test_room_create_invalid_body function
+def test_room_create_invalid_body(client):
+    # Test creating a room with an invalid body
+    data = RoomCreate(name="Test Room", capacity=-1)
+    response = client.post("/rooms", json=data.dict())
+    assert response.status_code == 422
+    assert response.json() == {"detail": "Capacity must be greater than or equal to 1"}
+
+# Define the test_room_list function
+def test_room_list(client):
+    # Test listing all rooms
+    response = client.get("/rooms")
+    assert response.status_code == 200
+    assert response.json() == [{"id": 1, "name": "Test Room", "capacity": 2}]
+
+# Define the test_room_create_booking function
+def test_room_create_booking(client):
+    # Test creating a booking
+    data = BookingCreate(room_id=1, title="Test Booking", start=datetime.now(), end=datetime.now() + datetime.timedelta(hours=1))
+    response = client.post("/bookings", json=data.dict())
+    assert response.status_code == 201
+    assert response.json() == {"id": 1, "room_id": 1, "title": "Test Booking", "start": "2023-04-01T12:00:00", "end": "2023-04-01T13:00:00"}
+
+# Define the test_room_create_booking_overlap function
+def test_room_create_booking_overlap(client):
+    # Test creating

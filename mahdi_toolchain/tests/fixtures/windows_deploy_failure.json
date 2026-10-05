@@ -1,0 +1,17 @@
+{
+  "provenance": "Actual WinError 32 traceback and deployment result pasted by Mahdi on 2026-10-04. JSON whitespace reconstructed, program taken from the matching v13 source; not a downloaded checkpoint or a new model response.",
+  "log": "Traceback (most recent call last):\n  File \"C:\\Python312\\Lib\\shutil.py\", line 633, in _rmtree_unsafe\n    os.unlink(fullname)\nPermissionError: [WinError 32] Processen kan ikke få adgang til filen, da den bruges af en anden proces: 'C:\\Users\\mahdi\\AppData\\Local\\Temp\\tmpemj94lf8\\booking.db'\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"<string>\", line 5, in <module>\n  File \"C:\\Python312\\Lib\\tempfile.py\", line 946, in __exit__\n    self.cleanup()\n  File \"C:\\Python312\\Lib\\tempfile.py\", line 950, in cleanup\n    self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)\n  File \"C:\\Python312\\Lib\\tempfile.py\", line 930, in _rmtree\n    _shutil.rmtree(name, onexc=onexc)\n  File \"C:\\Python312\\Lib\\shutil.py\", line 781, in rmtree\n    return _rmtree_unsafe(path, onexc)\n           ^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Python312\\Lib\\shutil.py\", line 635, in _rmtree_unsafe\n    onexc(os.unlink, fullname, err)\n  File \"C:\\Python312\\Lib\\tempfile.py\", line 905, in onexc\n    _os.unlink(path)\nPermissionError: [WinError 32] Processen kan ikke få adgang til filen, da den bruges af en anden proces: 'C:\\Users\\mahdi\\AppData\\Local\\Temp\\tmpemj94lf8\\booking.db'\n",
+  "result": {
+    "check": "deployment",
+    "command": [
+      "C:\\Users\\mahdi\\IdeaProjects\\LLM_mandatory_1\\mahdi_toolchain\\.venv\\Scripts\\python.exe",
+      "-c",
+      "import tempfile\nfrom pathlib import Path\nfrom fastapi.testclient import TestClient\nfrom booking.api import create_app\nwith tempfile.TemporaryDirectory() as folder:\n    db = str(Path(folder) / \"booking.db\")\n    client = TestClient(create_app(db))\n    assert client.get(\"/health\").json() == {\"status\": \"ok\"}\n    assert client.post(\"/rooms\", json={\"name\": \"Deploy\", \"capacity\": 2}).status_code == 201\n    assert Path(db).is_file()\n    second = TestClient(create_app(db))\n    assert second.get(\"/rooms\").json()[0][\"name\"] == \"Deploy\"\nprint(\"PASS: import, health, SQLite creation and persistence across app restart\")\n"
+    ],
+    "exit_code": 1,
+    "seconds": 1.594,
+    "log": "C:\\Users\\mahdi\\IdeaProjects\\LLM_mandatory_1\\mahdi_toolchain\\runs\\run-01\\logs\\deployment.txt",
+    "container_build": "NOT_RUN",
+    "passed": false
+  }
+}
