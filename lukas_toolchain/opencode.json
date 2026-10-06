@@ -1,24 +1,65 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "model": "llm-a/qwen2.5-coder-3b",
-  "small_model": "llm-b/qwen2.5-coder-1.5b",
+  "model": "llm-a/qwen2.5-3b-instruct",
+  "small_model": "llm-b/qwen2.5-1.5b-instruct",
+  "default_agent": "orchestrator",
   "share": "disabled",
-  "permission": {
-    "edit": "ask",
-    "bash": "ask"
+"permission": {
+  "edit": "allow",
+  "external_directory": "deny",
+  "question": "deny",
+  "bash": {
+    "*": "deny",
+    "ls*": "allow",
+    "cat *": "allow",
+    "mkdir *": "allow",
+    "python -m pytest*": "allow",
+    "pytest*": "allow",
+    "ruff *": "allow",
+    "pip install *": "allow",
+    "docker build *": "allow",
+    "git status*": "allow",
+    "git diff*": "allow",
+    "git log*": "allow",
+    "git add *": "allow",
+    "git commit *": "allow",
+    "git revert --no-edit HEAD": "allow",
+    "git commit *--amend*": "deny",
+    "git push*": "deny",
+    "git pull*": "deny",
+    "git fetch*": "deny",
+    "git remote*": "deny",
+    "git checkout*": "deny",
+    "git switch*": "deny",
+    "git branch*": "deny",
+    "git merge*": "deny",
+    "git rebase*": "deny",
+    "git reset*": "deny",
+    "git tag*": "deny",
+    "git -*": "deny"
   },
+  "todowrite": "deny",
+  "webfetch": "deny",
+  "websearch": "deny",
+  "skill": "deny",
+  "lsp": "deny"
+},
+  "compaction": { "auto": false },
   "provider": {
     "llm-a": {
       "npm": "@ai-sdk/openai-compatible",
       "name": "LLM-A architect/lead (local llama.cpp)",
       "options": {
         "baseURL": "http://127.0.0.1:8081/v1",
-        "apiKey": "{env:LLM_A_API_KEY}"
+        "apiKey": "{env:LLM_A_API_KEY}",
+        "timeout": false,
+        "headerTimeout": false,
+        "chunkTimeout": 1800000
       },
       "models": {
-        "qwen2.5-coder-3b": {
-          "name": "Qwen2.5-Coder-3B (A)",
-          "limit": { "context": 8192, "output": 2048 }
+        "qwen2.5-3b-instruct": {
+          "name": "Qwen2.5-3B-Instruct (A)",
+          "limit": { "context": 16384, "output": 2048 }
         }
       }
     },
@@ -27,12 +68,15 @@
       "name": "LLM-B worker/tester (local llama.cpp)",
       "options": {
         "baseURL": "http://127.0.0.1:8082/v1",
-        "apiKey": "{env:LLM_B_API_KEY}"
+        "apiKey": "{env:LLM_B_API_KEY}",
+        "timeout": false,
+        "headerTimeout": false,
+        "chunkTimeout": 1800000
       },
       "models": {
-        "qwen2.5-coder-1.5b": {
-          "name": "Qwen2.5-Coder-1.5B (B)",
-          "limit": { "context": 8192, "output": 1024 }
+        "qwen2.5-1.5b-instruct": {
+          "name": "Qwen2.5-1.5B-Instruct (B)",
+          "limit": { "context": 16384, "output": 2048 }
         }
       }
     }
