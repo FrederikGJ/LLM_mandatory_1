@@ -1,0 +1,117 @@
+# HR-02: model routing is read from ../llm_backend/config/endpoints.yaml.
+max_fix_rounds: 1
+format_retries: 1
+command_timeout_seconds: 120
+
+architect:
+  - path: docs/arch/components.md
+    read: [SPEC.md, CONTRACT.md]
+    task: >-
+      Describe all three components and their responsibilities. Copy the exact public signatures
+      and model fields from CONTRACT.md. Include HTTP error mapping. Maximum 30 lines.
+  - path: docs/arch/openapi.yaml
+    read: [SPEC.md, CONTRACT.md]
+    task: >-
+      Produce compact valid OpenAPI 3.1 YAML. Exactly the five paths in SPEC.md, all six operations
+      and status codes. Define RoomCreate, Room, BookingCreate, Booking in components/schemas
+      and use local $ref references. Maximum 90 lines; use inline mappings for small objects.
+  - path: docs/arch/deployment.md
+    read: [SPEC.md]
+    task: >-
+      Describe deployment topology: one FastAPI process in one container, host 127.0.0.1:8000
+      mapped to container 8000; BOOKING_DB=/data/booking.db on a persistent volume. State single
+      instance, SQLite concurrency limits, no production authentication. Maximum 16 lines.
+  - path: docs/arch/adr.md
+    read: [SPEC.md]
+    task: >-
+      Write ADR-001 FastAPI and Pydantic v2, and ADR-002 sqlite3 without ORM. Each has Status,
+      Context, Decision, Consequences. Mention CPU-only demo and single-instance limits. Max 22 lines.
+
+tech_lead:
+  - path: tickets/TICKETS.md
+    read: [SPEC.md, CONTRACT.md]
+    task: >-
+      Write four tickets, five lines each: title; owner/file/dependencies; scope; out of scope;
+      acceptance criteria. T-01 coder_1 models.py no dependency. T-02 coder_1 storage.py depends
+      T-01. T-03 coder_2 api.py depends on T-01/T-02 interfaces (implemented independently).
+      T-04 tester tests depends T-03. Include R1-R7, exact contract, pytest/ruff/mypy as DoD.
+
+coder_1:
+  - path: src/booking/models.py
+    read: [SPEC.md, CONTRACT.md, tickets/TICKETS.md]
+    task: >-
+      Implement all four Pydantic v2 models in the contract. Use model_validator(mode='after')
+      for start < end, return self. Field constraints: capacity >= 1 and non-empty title.
+      Use Python datetime values for start/end. Type hints. Fewer than 80 lines.
+  - path: src/booking/storage.py
+    read: [SPEC.md, CONTRACT.md, src/booking/models.py]
+    task: >-
+      Implement Storage and both exceptions exactly as CONTRACT.md. sqlite3 connection
+      check_same_thread=False, row_factory sqlite3.Row, create tables in __init__, commit writes.
+      Store times via datetime.isoformat(), return Pydantic objects. Enforce R3 overlap in same room
+      with SQL; allow back-to-back. Missing room/booking raises NotFoundError. Duplicate room or
+      overlap raises ConflictError. Sort bookings by start. Fewer than 80 lines.
+
+coder_2:
+  - path: src/booking/api.py
+    read: [SPEC.md, CONTRACT.md, tickets/TICKETS.md]
+    task: >-
+      Implement create_app(db_path) and module-level app. Import exact contract names from
+      booking.models and booking.storage. Five fixed paths, six operations from SPEC.md.
+      Map NotFoundError to 404 and ConflictError to 409 via exception handlers with JSONResponse.
+      DELETE success returns Response(status_code=204). Other file is implemented independently:
+      follow CONTRACT.md without inventing methods. Fewer than 80 lines, type hints.
+
+tester:
+  - path: tests/test_rooms.py
+    read: [SPEC.md, CONTRACT.md]
+    task: >-
+      Write pytest API tests with TestClient(create_app(':memory:')). Test health, room create/list,
+      duplicate name 409, capacity 0 gives 422, missing room bookings 404. Four short tests.
+      Import from booking.api. No test that merely asserts True; use actual HTTP requests.
+  - path: tests/test_bookings.py
+    read: [SPEC.md, CONTRACT.md]
+    task: >-
+      Write four short pytest API tests. Each uses TestClient(create_app(':memory:')) and creates
+      a room. Cover booking/list sorted, overlap 409 plus back-to-back 201, invalid time/title 422
+      plus missing room 404, cancellation 204 then 404. Use ISO datetimes on 2026-01-01.
+      Import from booking.api. No test that merely asserts True.
+
+quality_report:
+  - path: reports/analysis.md
+    read: [SPEC.md, reports/quality.md]
+    task: >-
+      As tester explain the recorded results and at least three concrete risks/limitations.
+      Describe any failure honestly, including single-instance SQLite, no auth, small models,
+      and container build not verified. Do not invent measurements. Maximum 18 lines.
+
+docs:
+  - path: README.md
+    read: [SPEC.md, reports/quality.md]
+    task: >-
+      Write concise setup/run/API docs: Python 3.12 venv, pip install -r requirements-dev.txt,
+      uvicorn booking.api:app --app-dir src --host 127.0.0.1 --port 8000; pytest tests acceptance,
+      ruff check src tests, mypy src. List every API endpoint with one room curl example.
+      Link docs/arch and docs/runbook.md. Report actual quality status. Max 28 lines.
+  - path: docs/runbook.md
+    read: [SPEC.md, docs/arch/deployment.md, reports/quality.md]
+    task: >-
+      Write operations notes: start/stop, BOOKING_DB, health check, uvicorn logs, backup/restore
+      SQLite while stopped, 409 is a business conflict, 422 is validation, failing tests block
+      acceptance. Explain no auth and local-only demo. Maximum 20 lines.
+
+deploy:
+  - path: Dockerfile
+    read: [SPEC.md, requirements.txt]
+    task: >-
+      Write Dockerfile: FROM python:3.12-slim, WORKDIR /app, install requirements.txt with pip,
+      COPY src ./src, create non-root user and writable /data owned by it, ENV BOOKING_DB
+      /data/booking.db, USER, EXPOSE 8000, JSON CMD uvicorn booking.api:app --app-dir src
+      --host 0.0.0.0 --port 8000. No shell scripts. Maximum 16 lines.
+  - path: docs/deployment-checklist.md
+    read: [SPEC.md, Dockerfile, reports/quality.md]
+    task: >-
+      Write deployment checklist with Python version, pinned dependencies, BOOKING_DB, data
+      volume ownership, local port, health, backup. Give docker build and docker run command
+      publishing 127.0.0.1:8000:8000 with named volume. State actual runtime validation is recorded
+      in reports/deployment.json; container build/run still needs manual verification. Max 22 lines.

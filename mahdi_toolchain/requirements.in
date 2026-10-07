@@ -1,0 +1,14 @@
+# Orchestration and OpenAI-compatible LOCAL clients; no cloud model is used.
+langgraph>=1,<2
+langgraph-checkpoint-sqlite>=3,<4
+langchain-openai>=1,<2
+python-dotenv>=1,<2
+PyYAML>=6,<7
+httpx>=0.28,<1
+# Generated application and quality checks run with this same environment.
+fastapi>=0.115,<1
+uvicorn>=0.34,<1
+pytest>=8,<10
+ruff>=0.11,<1
+mypy>=1,<3
+
